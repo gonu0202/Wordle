@@ -49,6 +49,7 @@ let [gridColor, setGridColor] = useState([
   };
   const handleOk = async () => {
     setIsModalOpen(false);
+    window.location.reload();
   };
   const handleCancel = () => {
     setIsModalOpen(false);
@@ -173,7 +174,7 @@ let [gridColor, setGridColor] = useState([
           overflow:"auto", textAlignLast:"center",
         }}
         width={446}>
-          {won?<p>Please refresh to play another game!</p>:<p>The Correct word was {secretWord}</p>}
+          {won?<p>Click 'ok' to play new game!</p>:<p>The Correct word was {secretWord}, click 'ok' to play new game!</p>}
         </Modal>
       }
 
