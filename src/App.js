@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import './App.css';
 import {Row, Col, Input, Modal, Space, Card} from 'antd'
 import fiveLetterWords from './wordsList';
@@ -40,8 +40,18 @@ let [gridColor, setGridColor] = useState([
     ["WhiteSmoke","WhiteSmoke","WhiteSmoke","WhiteSmoke","WhiteSmoke"]
 ])
 
+  const inputRefs = useRef(Array.from({ length: 6 }, () =>
+    Array.from({ length: 5 }, () => null)
+  ));
+
   const handleChange = (event, currentRow, currentColumn) => {
     filledValue[currentRow-1][currentColumn-1] = event.target.value;
+
+    if (currentColumn < 5 && event.target.value.length > 0) {
+      if (inputRefs.current[currentRow - 1][currentColumn]) {
+        inputRefs.current[currentRow - 1][currentColumn].focus();
+      }
+    }
   }
 
   const showModal = () => {
@@ -73,8 +83,18 @@ let [gridColor, setGridColor] = useState([
     }
   };
 
-  const handleEnterKeyPress = async(event, currentRow) => {
-    if (event.key === 'Enter') {
+  const handleEnterKeyPress = async(event, currentRow, currentColumn) => {
+    if (event.key === 'Backspace') {
+      if (currentColumn <= 5 && currentRow <= 6) {
+        if (event.target.value.length > 0 && inputRefs.current[currentRow-1][currentColumn-1]) {
+          inputRefs.current[currentRow-1][currentColumn-1].focus();
+        }
+        else if(event.target.value.length === 0 && inputRefs.current[currentRow-1][currentColumn-2]) {
+          inputRefs.current[currentRow-1][currentColumn-2].focus();
+        }
+      }
+    }
+    else if (event.key === 'Enter') {
       var count=0;
       for(var i=0;i<5;i++){
         if(filledValue[currentRow-1][i] != 0)
@@ -127,6 +147,12 @@ let [gridColor, setGridColor] = useState([
           }
           if(currentRow===6)
             showModal();
+
+          if (currentColumn === 5 && currentRow < 6) {
+            if (inputRefs.current[currentRow][0]) {
+              inputRefs.current[currentRow][0].focus();
+            }
+          }
         }
       }
     }
@@ -134,8 +160,12 @@ let [gridColor, setGridColor] = useState([
 
 
   useEffect(() => {
-    const randomInt = Math.floor(Math.random() * 99);
+    const randomInt = Math.floor(Math.random() * 199);
     setSecretWord(fiveLetterWords[randomInt]);
+
+    if (inputRefs.current[0][0]) {
+      inputRefs.current[0][0].focus();
+    }
   }, []);
 
   return (
@@ -153,8 +183,9 @@ let [gridColor, setGridColor] = useState([
                 style={{width:"70px", backgroundColor: gridColor[e.id-1][c.id-1]}}
                 disabled={e.id>=disabledRow || e.id<disabledRow-1}
                 onChange={(event)=>handleChange(event, e.id, c.id)}
-                onKeyDown={event=>{handleEnterKeyPress(event, e.id)}}
+                onKeyDown={event=>{handleEnterKeyPress(event, e.id, c.id)}}
                 maxLength={1}
+                ref={(inputRef) => inputRefs.current[e.id-1][c.id-1] = inputRef}
               />
             </Col>
           ))}
