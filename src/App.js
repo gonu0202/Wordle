@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import './App.css';
-import {Row, Col, Input, Modal, Space, Card} from 'antd'
+import {Row, Col, Input, Modal, Switch} from 'antd'
 import fiveLetterWords from './wordsList';
 
 function App() {
@@ -12,15 +12,18 @@ function App() {
   let [won, setWon] = useState(false);
   let [secretWord, setSecretWord] = useState("beast");
   let [isValidWord, setIsValidWord] = useState(true);
+  let [timer, setTimer] = useState(360);
+  let [wrongAttemptCount, setWrongAttemptCount] = useState(5);
+  let [isHard, setIsHard] = useState(false);
 
-  const filledValue = [
+  let [filledValue,setFilledValue] = useState([
   [0,0,0,0,0],
   [0,0,0,0,0],
   [0,0,0,0,0],
   [0,0,0,0,0],
   [0,0,0,0,0],
   [0,0,0,0,0]
-];
+]);
 
 let [usedLettersMap, setUsedLetterMap] = useState({
   "a": "black","b": "black","c": "black","d": "black",
@@ -40,12 +43,13 @@ let [gridColor, setGridColor] = useState([
     ["WhiteSmoke","WhiteSmoke","WhiteSmoke","WhiteSmoke","WhiteSmoke"]
 ])
 
-  const inputRefs = useRef(Array.from({ length: 6 }, () =>
+  let inputRefs = useRef(Array.from({ length: 6 }, () =>
     Array.from({ length: 5 }, () => null)
   ));
 
   const handleChange = (event, currentRow, currentColumn) => {
     filledValue[currentRow-1][currentColumn-1] = event.target.value;
+    setFilledValue(filledValue);
 
     if (currentColumn < 5 && event.target.value.length > 0) {
       if (inputRefs.current[currentRow - 1][currentColumn]) {
@@ -84,6 +88,7 @@ let [gridColor, setGridColor] = useState([
   };
 
   const handleEnterKeyPress = async(event, currentRow, currentColumn) => {
+    //focus change on backspace
     if (event.key === 'Backspace') {
       if (currentColumn <= 5 && currentRow <= 6) {
         if (event.target.value.length > 0 && inputRefs.current[currentRow-1][currentColumn-1]) {
@@ -94,6 +99,7 @@ let [gridColor, setGridColor] = useState([
         }
       }
     }
+    //handle events on enter
     else if (event.key === 'Enter') {
       var count=0;
       for(var i=0;i<5;i++){
@@ -105,6 +111,9 @@ let [gridColor, setGridColor] = useState([
         var isValidWord = await checkWordValidity(enteredWord);
         if(!isValidWord){
           setIsValidWord(false);
+          setWrongAttemptCount(wrongAttemptCount-1);
+          if(wrongAttemptCount<=0 && isHard)
+            showModal();
         }
         else{
           setIsValidWord(true);
@@ -132,8 +141,10 @@ let [gridColor, setGridColor] = useState([
             }
           }
           
+          //Won
           if(countOfMatch == 5){
             setWon(true);
+            setDisabledRow(disabledRow+1);
             showModal();
           }
           else{
@@ -145,10 +156,13 @@ let [gridColor, setGridColor] = useState([
               setGridColor(gridColorNew);
             }
           }
+
+          //lost
           if(currentRow===6)
             showModal();
 
-          if (currentColumn === 5 && currentRow < 6) {
+          //change focus to next column first row
+          if (currentColumn <=5 && currentRow < 6) {
             if (inputRefs.current[currentRow][0]) {
               inputRefs.current[currentRow][0].focus();
             }
@@ -166,12 +180,31 @@ let [gridColor, setGridColor] = useState([
     if (inputRefs.current[0][0]) {
       inputRefs.current[0][0].focus();
     }
+
+    // Timer logic
+    const interval = setInterval(() => {
+      setTimer(prevTimer => prevTimer - 1);
+    }, 1000);
+
+    // Check if the timer should stop when it reaches 0
+    setTimeout(() => {
+      clearInterval(interval);
+      showModal();
+    }, 3600000); // 3600000 milliseconds = 3600 seconds = 60 minutes (1 hour)
   }, []);
 
   return (
     <div>
       <h1><b>Wordle Clone</b></h1>
-      <h2>Welcome, Guess todays word in 6 tries!</h2>
+      <h2>Welcome, Guess the secret word in 6 tries!</h2>
+
+      <h3> Hard version <Switch onChange={()=>{setIsHard(!isHard);setTimer(360)}} /></h3>
+
+      {isHard && <div className="timer-container">
+        <h3 style={{ color: timer <= 10 ? "red" : "inherit" }}>
+          Time Remaining: {timer} seconds
+        </h3>
+      </div>}
 
       {attemptRow.map((e) => (
         <div key={e.id}>
@@ -180,7 +213,12 @@ let [gridColor, setGridColor] = useState([
             <Col span={1} >
               <Input 
                 size="large" 
-                style={{width:"70px", backgroundColor: gridColor[e.id-1][c.id-1]}}
+                style={{width:"70px", 
+                  backgroundColor: gridColor[e.id-1][c.id-1], 
+                  fontFamily: "Arial, sans-serif",
+                  fontWeight: "bold",
+                  textTransform: "uppercase",
+                }}
                 disabled={e.id>=disabledRow || e.id<disabledRow-1}
                 onChange={(event)=>handleChange(event, e.id, c.id)}
                 onKeyDown={event=>{handleEnterKeyPress(event, e.id, c.id)}}
@@ -211,7 +249,13 @@ let [gridColor, setGridColor] = useState([
 
       {!isValidWord && <p style={{color:"red"}}>not a valid word!</p>}
 
-      <h4> Used Letters Info</h4>
+      {isHard && <div className="attempt-container">
+        <h3 style={{ color: "red"}}>
+          Wrong Attempt Remaining: {wrongAttemptCount}
+        </h3>
+      </div>}
+
+      <h3> Used Letters Info</h3>
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
       {Object.keys(usedLettersMap).map((key, index) => (
         <React.Fragment key={key}>
@@ -220,11 +264,12 @@ let [gridColor, setGridColor] = useState([
               color: usedLettersMap[key],
               margin: '0 10px',
               textAlign: 'center',
+              fontFamily: "Arial, sans-serif",
+              fontWeight: "bold"
             }}
           >
-            {key}
+            {key.toUpperCase()}
           </h3>
-          {index === 9 || index === 18 && <br />}
         </React.Fragment>
       ))}
     </div>

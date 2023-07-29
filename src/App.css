@@ -24,6 +24,18 @@
   color: white;
 }
 
+.timer-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.attempt-container {
+  position: absolute;
+  top: 50px;
+  right: 20px;
+}
+
 .App-link {
   color: #61dafb;
 }
