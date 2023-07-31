@@ -5,7 +5,8 @@ import fiveLetterWords from './wordsList';
 
 function App() {
 
-  let [disabledRow, setDisabledRow] = useState(2);
+  let [nextDisabledRow, setNextDisabledRow] = useState(1);
+  let [prevDisabledRow, setPrevDisabledRow] = useState(1);
   let [attemptRow, setAttemptRow] = useState([{id:1, color:"white"}, {id:2, color:"white"}, {id:3, color:"white"}, {id:4, color:"white"}, {id:5, color:"white"}, {id:6, color:"white"}]);
   let [attemptColumn,setAttemptColumn] = useState([{id:1, color:"white"}, {id:2, color:"white"}, {id:3, color:"white"}, {id:4, color:"white"}, {id:5, color:"white"}]);
   let [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,8 +60,8 @@ let [gridColor, setGridColor] = useState([
   }
 
   const showModal = () => {
+    setPrevDisabledRow(prevDisabledRow+1);
     setIsModalOpen(true);
-    setDisabledRow(disabledRow+1);
   };
   const handleOk = async () => {
     setIsModalOpen(false);
@@ -149,7 +150,8 @@ let [gridColor, setGridColor] = useState([
             showModal();
           }
           else{
-            setDisabledRow(disabledRow+1);
+            setNextDisabledRow(nextDisabledRow+1);
+            setPrevDisabledRow(prevDisabledRow+1);
             let gridColorNew = gridColor;
             for(var i=0;i<5;i++){
               if(currentRow<6)
@@ -194,7 +196,7 @@ let [gridColor, setGridColor] = useState([
   }, []);
 
   useEffect(() => {
-    if (timer == 0) {
+    if (timer === 0 && isHard) {
       setTimer(-1);
       showModal();
     }
@@ -226,7 +228,7 @@ let [gridColor, setGridColor] = useState([
                   fontWeight: "bold",
                   textTransform: "uppercase",
                 }}
-                disabled={e.id>=disabledRow || e.id<disabledRow-1}
+                disabled={e.id>nextDisabledRow || e.id<prevDisabledRow}
                 onChange={(event)=>handleChange(event, e.id, c.id)}
                 onKeyDown={event=>{handleEnterKeyPress(event, e.id, c.id)}}
                 maxLength={1}
