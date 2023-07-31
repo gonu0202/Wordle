@@ -202,7 +202,7 @@ let [gridColor, setGridColor] = useState([
 
   return (
     <div>
-      <h1><b>Wordle Clone</b></h1>
+      <h1><b>Wordle</b></h1>
       <h2>Welcome, Guess the secret word in 6 tries!</h2>
 
       <h3> Hard version <Switch onChange={()=>{setIsHard(!isHard)}} /></h3>
