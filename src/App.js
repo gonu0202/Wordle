@@ -60,6 +60,7 @@ let [gridColor, setGridColor] = useState([
 
   const showModal = () => {
     setIsModalOpen(true);
+    setDisabledRow(disabledRow+1);
   };
   const handleOk = async () => {
     setIsModalOpen(false);
@@ -132,7 +133,8 @@ let [gridColor, setGridColor] = useState([
               let gridColorNew = gridColor;
               gridColorNew[currentRow-1][i] = "yellow";
               setGridColor(gridColorNew);
-              usedLettersMap[filledValue[currentRow-1][i].toLowerCase()] = "yellow";
+              if(usedLettersMap[filledValue[currentRow-1][i].toLowerCase()] != "green")
+                usedLettersMap[filledValue[currentRow-1][i].toLowerCase()] = "yellow";
               setUsedLetterMap(usedLettersMap);
             }
             else{
@@ -144,7 +146,6 @@ let [gridColor, setGridColor] = useState([
           //Won
           if(countOfMatch == 5){
             setWon(true);
-            setDisabledRow(disabledRow+1);
             showModal();
           }
           else{
@@ -181,24 +182,30 @@ let [gridColor, setGridColor] = useState([
       inputRefs.current[0][0].focus();
     }
 
-    // Timer logic
+    //Timer logic
     const interval = setInterval(() => {
-      setTimer(prevTimer => prevTimer - 1);
+      setTimer(prevSeconds => prevSeconds - 1);
     }, 1000);
 
-    // Check if the timer should stop when it reaches 0
-    setTimeout(() => {
+    // Clean up the interval when the component unmounts or the timer reaches 0
+    return () => {
       clearInterval(interval);
-      showModal();
-    }, 3600000); // 3600000 milliseconds = 3600 seconds = 60 minutes (1 hour)
+    };
   }, []);
+
+  useEffect(() => {
+    if (timer == 0) {
+      setTimer(-1);
+      showModal();
+    }
+  }, [timer]);
 
   return (
     <div>
       <h1><b>Wordle Clone</b></h1>
       <h2>Welcome, Guess the secret word in 6 tries!</h2>
 
-      <h3> Hard version <Switch onChange={()=>{setIsHard(!isHard);setTimer(360)}} /></h3>
+      <h3> Hard version <Switch onChange={()=>{setIsHard(!isHard)}} /></h3>
 
       {isHard && <div className="timer-container">
         <h3 style={{ color: timer <= 10 ? "red" : "inherit" }}>
