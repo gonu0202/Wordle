@@ -16,6 +16,7 @@ function App() {
   let [timer, setTimer] = useState(360);
   let [wrongAttemptCount, setWrongAttemptCount] = useState(5);
   let [isHard, setIsHard] = useState(false);
+  let [hardCheckMessage, setHardCheckMessage] = useState("");
 
   let [filledValue,setFilledValue] = useState([
   [0,0,0,0,0],
@@ -108,6 +109,7 @@ let [gridColor, setGridColor] = useState([
         if(filledValue[currentRow-1][i] != 0)
           count++;
       }
+      //All 5 letters filled
       if(count===5){
         var enteredWord = filledValue[currentRow-1][0]+filledValue[currentRow-1][1]+filledValue[currentRow-1][2]+filledValue[currentRow-1][3]+filledValue[currentRow-1][4];
         var isValidWord = await checkWordValidity(enteredWord);
@@ -118,56 +120,87 @@ let [gridColor, setGridColor] = useState([
             showModal();
         }
         else{
+          setHardCheckMessage("");
           setIsValidWord(true);
-          let countOfMatch = 0;
-          for(var i=0;i<5;i++){
-            if(secretWord[i].toLowerCase() === filledValue[currentRow-1][i].toLowerCase()){
-              let gridColorNew = gridColor;
-              gridColorNew[currentRow-1][i] = "green";
-              setGridColor(gridColorNew);
-              usedLettersMap[secretWord[i].toLowerCase()] = "green";
-              setUsedLetterMap(usedLettersMap);
-              countOfMatch++;
-            }
+          if(isHard){
+            for(var letter of Object.keys(usedLettersMap)){
+              if(usedLettersMap[letter] === "green"){
+                var actualPositionOfletter = 0;
+                for(var i=0;i<5;i++){
+                  if(secretWord[i].toLowerCase() === letter){
+                    actualPositionOfletter = i;
+                    break;
+                  }
+                }
 
-            else if(secretWord.includes(filledValue[currentRow-1][i].toLowerCase()) || secretWord.includes(filledValue[currentRow-1][i].toUpperCase())){
-              let gridColorNew = gridColor;
-              gridColorNew[currentRow-1][i] = "yellow";
-              setGridColor(gridColorNew);
-              if(usedLettersMap[filledValue[currentRow-1][i].toLowerCase()] != "green")
-                usedLettersMap[filledValue[currentRow-1][i].toLowerCase()] = "yellow";
-              setUsedLetterMap(usedLettersMap);
+                if(filledValue[currentRow-1][actualPositionOfletter].toLowerCase() != letter){
+                  hardCheckMessage = "Letter- "+letter.toUpperCase()+" must be at correct position";
+                  setHardCheckMessage(hardCheckMessage);
+                  break;
+                }
+              }
+            }
+            for(var letter of Object.keys(usedLettersMap)){
+              if(usedLettersMap[letter] === "yellow"){
+                if(!filledValue[currentRow-1].includes(letter) && !filledValue[currentRow-1].includes(letter.toUpperCase())){
+                  hardCheckMessage = "Letter- "+letter.toUpperCase()+" must be in the entered word";
+                  setHardCheckMessage(hardCheckMessage);
+                  break;
+                }
+              }
+            }
+          }
+
+          if(hardCheckMessage === ""){
+            let countOfMatch = 0;
+            for(var i=0;i<5;i++){
+              if(secretWord[i].toLowerCase() === filledValue[currentRow-1][i].toLowerCase()){
+                let gridColorNew = gridColor;
+                gridColorNew[currentRow-1][i] = "green";
+                setGridColor(gridColorNew);
+                usedLettersMap[secretWord[i].toLowerCase()] = "green";
+                setUsedLetterMap(usedLettersMap);
+                countOfMatch++;
+              }
+              else if(secretWord.includes(filledValue[currentRow-1][i].toLowerCase()) || secretWord.includes(filledValue[currentRow-1][i].toUpperCase())){
+                let gridColorNew = gridColor;
+                gridColorNew[currentRow-1][i] = "yellow";
+                setGridColor(gridColorNew);
+                if(usedLettersMap[filledValue[currentRow-1][i].toLowerCase()] != "green")
+                  usedLettersMap[filledValue[currentRow-1][i].toLowerCase()] = "yellow";
+                setUsedLetterMap(usedLettersMap);
+              }
+              else{
+                usedLettersMap[filledValue[currentRow-1][i].toLowerCase()] = "LightGray";
+                setUsedLetterMap(usedLettersMap);
+              }
+            }
+            
+            //Won
+            if(countOfMatch == 5){
+              setWon(true);
+              showModal();
             }
             else{
-              usedLettersMap[filledValue[currentRow-1][i].toLowerCase()] = "LightGray";
-              setUsedLetterMap(usedLettersMap);
+              setNextDisabledRow(nextDisabledRow+1);
+              setPrevDisabledRow(prevDisabledRow+1);
+              let gridColorNew = gridColor;
+              for(var i=0;i<5;i++){
+                if(currentRow<6)
+                  gridColorNew[currentRow][i] = "white";
+                setGridColor(gridColorNew);
+              }
             }
-          }
-          
-          //Won
-          if(countOfMatch == 5){
-            setWon(true);
-            showModal();
-          }
-          else{
-            setNextDisabledRow(nextDisabledRow+1);
-            setPrevDisabledRow(prevDisabledRow+1);
-            let gridColorNew = gridColor;
-            for(var i=0;i<5;i++){
-              if(currentRow<6)
-                gridColorNew[currentRow][i] = "white";
-              setGridColor(gridColorNew);
-            }
-          }
 
-          //lost
-          if(currentRow===6)
-            showModal();
+            //lost
+            if(currentRow===6)
+              showModal();
 
-          //change focus to next column first row
-          if (currentColumn <=5 && currentRow < 6) {
-            if (inputRefs.current[currentRow][0]) {
-              inputRefs.current[currentRow][0].focus();
+            //change focus to next column first row
+            if (currentColumn <=5 && currentRow < 6) {
+              if (inputRefs.current[currentRow][0]) {
+                inputRefs.current[currentRow][0].focus();
+              }
             }
           }
         }
@@ -185,22 +218,22 @@ let [gridColor, setGridColor] = useState([
     }
 
     //Timer logic
-    const interval = setInterval(() => {
-      setTimer(prevSeconds => prevSeconds - 1);
-    }, 1000);
+    // const interval = setInterval(() => {
+    //   setTimer(prevSeconds => prevSeconds - 1);
+    // }, 1000);
 
-    // Clean up the interval when the component unmounts or the timer reaches 0
-    return () => {
-      clearInterval(interval);
-    };
+    // // Clean up the interval when the component unmounts or the timer reaches 0
+    // return () => {
+    //   clearInterval(interval);
+    // };
   }, []);
 
-  useEffect(() => {
-    if (timer === 0 && isHard) {
-      setTimer(-1);
-      showModal();
-    }
-  }, [timer]);
+  // useEffect(() => {
+  //   if (timer === 0 && isHard) {
+  //     setTimer(-1);
+  //     showModal();
+  //   }
+  // }, [timer]);
 
   return (
     <div>
@@ -209,11 +242,17 @@ let [gridColor, setGridColor] = useState([
 
       <h3> Hard version <Switch onChange={()=>{setIsHard(!isHard)}} /></h3>
 
-      {isHard && <div className="timer-container">
+      {isHard && <div>
+        <h3 style={{ color: "red"}}>
+          Wrong Attempt Remaining: {wrongAttemptCount}
+        </h3>
+      </div>}
+
+      {/* {isHard && <div className="timer-container">
         <h3 style={{ color: timer <= 10 ? "red" : "inherit" }}>
           Time Remaining: {timer} seconds
         </h3>
-      </div>}
+      </div>} */}
 
       {attemptRow.map((e) => (
         <div key={e.id}>
@@ -256,13 +295,8 @@ let [gridColor, setGridColor] = useState([
         </Modal>
       }
 
-      {!isValidWord && <p style={{color:"red"}}>not a valid word!</p>}
-
-      {isHard && <div className="attempt-container">
-        <h3 style={{ color: "red"}}>
-          Wrong Attempt Remaining: {wrongAttemptCount}
-        </h3>
-      </div>}
+      {!isValidWord && <h4 style={{color:"red"}}>not a valid word!</h4>}
+      {isValidWord && hardCheckMessage!="" && <h4 style={{color:"red"}}>{hardCheckMessage}</h4>}
 
       <h3> Used Letters Info</h3>
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
