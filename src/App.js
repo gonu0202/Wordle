@@ -210,7 +210,7 @@ let [gridColor, setGridColor] = useState([
 
 
   useEffect(() => {
-    const randomInt = Math.floor(Math.random() * 199);
+    const randomInt = Math.floor(Math.random() * 234);
     setSecretWord(fiveLetterWords[randomInt]);
 
     if (inputRefs.current[0][0]) {
